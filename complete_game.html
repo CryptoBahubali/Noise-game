@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Red Panda Adventure</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background: #5c94fc;
+            font-family: Arial, sans-serif;
+            touch-action: none;
+        }
+
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+            max-height: 100vh;
+        }
+
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            z-index: 10;
+        }
+
+        #lives {
+            position: absolute;
+            top: 60px;
+            left: 20px;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            z-index: 10;
+        }
+
+        #powerUp {
+            position: absolute;
+            top: 100px;
+            left: 20px;
+            color: #ffeb3b;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            z-index: 10;
+            display: none;
+        }
+
+        .screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            color: white;
+            padding: 50px;
+            border-radius: 20px;
+            text-align: center;
+            display: none;
+            z-index: 100;
+            max-width: 90%;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .screen h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #ff5733;
+        }
+
+        .screen p {
+            font-size: 18px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .screen button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            font-size: 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 10px;
+        }
+
+        .screen button:hover {
+            background: #45a049;
+            transform: scale(1.05);
+        }
+
+        .screen button:active {
+            transform: scale(0.95);
+        }
+
+        .controls-info {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .controls-info h3 {
+            color: #ffeb3b;
+            margin-bottom: 10px;
+        }
+
+        /* Mobile Controls */
+        #mobileControls {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            display: none;
+            z-index: 20;
+        }
+
+        .control-group {
+            position: absolute;
+        }
+
+        .left-controls {
+            left: 20px;
+            bottom: 0;
+        }
+
+        .right-controls {
+            right: 20px;
+            bottom: 0;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.4);
+            border: 3px solid rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            width: 70px;
+            height: 70px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 5px;
+            font-size: 24px;
+            color: white;
+            font-weight: bold;
+            user-select: none;
+            cursor: pointer;
+            touch-action: none;
+        }
+
+        .control-btn:active {
+            background: rgba(255, 255, 255, 0.6);
+            transform: scale(0.9);
+        }
+
+        .jump-btn {
+            width: 80px;
+            height: 80px;
+            font-size: 16px;
+        }
+
+        .fire-btn {
+            background: rgba(255, 100, 100, 0.5);
+            border-color: rgba(255, 100, 100, 0.8);
+            width: 75px;
+            height: 75px;
+            font-size: 16px;
+        }
+
+        .fire-btn:active {
+            background: rgba(255, 100, 100, 0.7);
+        }
+
+        @media (max-width: 768px) {
+            #mobileControls {
+                display: block;
+            }
+
+            #ui {
+                font-size: 18px;
+            }
+
+            #lives {
+                font-size: 16px;
+                top: 45px;
+            }
+
+            #powerUp {
+                font-size: 14px;
+                top: 70px;
+            }
+
+            .screen h1 {
+                font-size: 32px;
+            }
+
+            .screen p {
+                font-size: 16px;
+            }
+
+            .screen {
+                padding: 30px 20px;
+            }
+
+            .control-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 20px;
+            }
+
+            .jump-btn, .fire-btn {
+                width: 65px;
+                height: 65px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="ui">🪙 Tokens: 0</div>
+    <div id="lives">❤️ Lives: 3</div>
+    <div id="powerUp">⚡ Power Active!</div>
+
+    <!-- Start Screen -->
+    <div id="startScreen" class="screen active">
+        <h1>🦊 Red Panda Adventure</h1>
+        <p>Help the Red Panda collect tokens and defeat enemies!</p>
+        
+        <div class="controls-info">
+            <h3>🎮 Controls</h3>
+            <p><strong>Desktop:</strong> Arrow Keys = Move | Space = Jump | X = Fire</p>
+            <p><strong>Mobile:</strong> Use touch buttons</p>
+        </div>
+
+        <div class="controls-info">
+            <h3>⭐ How to Play</h3>
+            <p>🪙 Hit question blocks from below to get tokens</p>
+            <p>⚡ Collect power-ups to shoot fireballs</p>
+            <p>🔥 Jump on enemies or shoot them to defeat</p>
+            <p>❤️ You have 3 lives - don't get hit!</p>
+        </div>
+
+        <button id="startBtn">START GAME</button>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameOverScreen" class="screen">
+        <h2 style="font-size: 42px; color: #ff6b6b;">Game Over!</h2>
+        <p id="finalScore" style="font-size: 28px; margin: 20px 0;"></p>
+        <p id="enemiesKilled" style="font-size: 22px; color: #ffeb3b;"></p>
+        <button id="restartBtn">PLAY AGAIN</button>
+    </div>
+
+    <!-- Victory Screen -->
+    <div id="victoryScreen" class="screen">
+        <h2 style="font-size: 48px; color: #4CAF50;">🎉 Victory! 🎉</h2>
+        <p id="victoryScore" style="font-size: 28px; margin: 20px 0;"></p>
+        <p style="font-size: 22px; color: #ffeb3b;">You collected all the tokens!</p>
+        <button id="playAgainBtn">PLAY AGAIN</button>
+    </div>
+
+    <!-- Mobile Controls -->
+    <div id="mobileControls">
+        <div class="control-group left-controls">
+            <div class="control-btn" id="leftBtn">◄</div>
+            <div class="control-btn" id="rightBtn">►</div>
+        </div>
+        <div class="control-group right-controls">
+            <div class="control-btn jump-btn" id="jumpBtn">JUMP</div>
+            <div class="control-btn fire-btn" id="fireBtn">FIRE</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Responsive canvas
+        function resizeCanvas() {
+            const ratio = 2;
+            canvas.width = Math.min(1200, window.innerWidth);
+            canvas.height = canvas.width / ratio;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Game constants
+        const GAME = {
+            WIDTH: 1200,
+            HEIGHT: 600,
+            GRAVITY: 0.6,
+            GROUND_Y: 500
+        };
+
+        // Game state
+        let state = {
+            active: false,
+            score: 0,
+            lives: 3,
+            enemiesKilled: 0,
+            keys: {},
+            camera: 0,
+            powerUpActive: false,
+            powerUpTimer: 0
+        };
+
+        // Player
+        const player = {
+            x: 100,
+            y: GAME.GROUND_Y - 50,
+            width: 50,
+            height: 50,
+            vx: 0,
+            vy: 0,
+            speed: 6,
+            jumpPower: 16,
+            onGround: false,
+            direction: 1,
+            invincible: false,
+            invincibleTimer: 0,
+
+            reset() {
+                this.x = 100;
+                this.y = GAME.GROUND_Y - 50;
+                this.vx = 0;
+                this.vy = 0;
+                this.onGround = false;
+                this.direction = 1;
+                this.invincible = false;
+                this.invincibleTimer = 0;
+            }
+        };
+
+        // Level data
+        const platforms = [
+            { x: 0, y: GAME.GROUND_Y, width: 3000, height: 100 },
+            { x: 300, y: 400, width: 150, height: 20 },
+            { x: 550, y: 350, width: 150, height: 20 },
+            { x: 800, y: 300, width: 150, height: 20 },
+            { x: 1100, y: 250, width: 150, height: 20 },
+            { x: 1400, y: 350, width: 200, height: 20 },
+            { x: 1700, y: 400, width: 150, height: 20 },
+            { x: 2000, y: 300, width: 200, height: 20 },
+            { x: 2300, y: 250, width: 150, height: 20 },
+            { x: 2600, y: 400, width: 200, height: 20 }
+        ];
+
+        let questionBlocks = [
+            { x: 400, y: 300, width: 50, height: 50, active: true, bounce: 0, type: 'token' },
+            { x: 650, y: 250, width: 50, height: 50, active: true, bounce: 0, type: 'power' },
+            { x: 900, y: 200, width: 50, height: 50, active: true, bounce: 0, type: 'token' },
+            { x: 1200, y: 150, width: 50, height: 50, active: true, bounce: 0, type: 'token' },
+            { x: 1500, y: 250, width: 50, height: 50, active: true, bounce: 0, type: 'power' },
+            { x: 1800, y: 300, width: 50, height: 50, active: true, bounce: 0, type: 'token' },
+            { x: 2100, y: 200, width: 50, height: 50, active: true, bounce: 0, type: 'token' },
+            { x: 2400, y: 150, width: 50, height: 50, active: true, bounce: 0, type: 'power' },
+            { x: 2700, y: 300, width: 50, height: 50, active: true, bounce: 0, type: 'token' }
+        ];
+
+        let tokens = [];
+        let powerUps = [];
+        let fireballs = [];
+        
+        let enemies = [
+            { x: 600, y: GAME.GROUND_Y - 40, width: 40, height: 40, vx: 2, dir: 1, alive: true },
+            { x: 1000, y: GAME.GROUND_Y - 40, width: 40, height: 40, vx: 2, dir: 1, alive: true },
+            { x: 1400, y: GAME.GROUND_Y - 40, width: 40, height: 40, vx: 2, dir: 1, alive: true },
+            { x: 1900, y: GAME.GROUND_Y - 40, width: 40, height: 40, vx: 2, dir: 1, alive: true },
+            { x: 2400, y: GAME.GROUND_Y - 40, width: 40, height: 40, vx: 2, dir: 1, alive: true }
+        ];
+
+        // Drawing functions
+        function drawPlayer() {
+            const screenX = player.x - state.camera;
+            
+            // Invincibility flicker
+            if (player.invincible && Math.floor(player.invincibleTimer / 5) % 2 === 0) {
+                return;
+            }
+
+            ctx.save();
+            ctx.translate(screenX + player.width / 2, player.y + player.height / 2);
+            if (player.direction === -1) ctx.scale(-1, 1);
+
+            // Power-up glow
+            if (state.powerUpActive) {
+                ctx.shadowColor = '#ffeb3b';
+                ctx.shadowBlur = 20;
+            }
+
+            // Body
+            ctx.fillStyle = '#ff5733';
+            ctx.beginPath();
+            ctx.ellipse(0, 5, 22, 28, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Belly
+            ctx.fillStyle = '#ffd7b5';
+            ctx.beginPath();
+            ctx.ellipse(0, 10, 15, 20, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Head
+            ctx.fillStyle = '#ff5733';
+            ctx.beginPath();
+            ctx.arc(0, -15, 20, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Ears
+            ctx.fillStyle = '#ffd7b5';
+            ctx.beginPath();
+            ctx.ellipse(-12, -25, 8, 12, -0.3, 0, Math.PI * 2);
+            ctx.ellipse(12, -25, 8, 12, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.ellipse(-12, -25, 5, 8, -0.3, 0, Math.PI * 2);
+            ctx.ellipse(12, -25, 5, 8, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Face markings
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.ellipse(-8, -15, 6, 8, 0, 0, Math.PI * 2);
+            ctx.ellipse(8, -15, 6, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Sunglasses
+            ctx.fillStyle = '#222';
+            ctx.fillRect(-18, -18, 15, 8);
+            ctx.fillRect(3, -18, 15, 8);
+            ctx.fillRect(-3, -16, 6, 4);
+
+            // Glare
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.fillRect(-16, -17, 8, 3);
+            ctx.fillRect(5, -17, 8, 3);
+
+            // Nose
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.ellipse(0, -8, 3, 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function drawBlock(block) {
+            const screenX = block.x - state.camera;
+            const y = block.y - block.bounce;
+
+            ctx.fillStyle = block.active ? '#f5a623' : '#8b7355';
+            ctx.fillRect(screenX, y, block.width, block.height);
+
+            ctx.strokeStyle = '#d68910';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(screenX, y, block.width, block.height);
+
+            if (block.active) {
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 30px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('?', screenX + 25, y + 25);
+            }
+        }
+
+        function drawToken(token) {
+            const screenX = token.x - state.camera;
+
+            ctx.save();
+            ctx.translate(screenX + 15, token.y + 15);
+            ctx.rotate(token.rotation || 0);
+
+            ctx.fillStyle = '#ff5733';
+            ctx.beginPath();
+            ctx.arc(0, 0, 15, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = '#222';
+            ctx.lineWidth = 2.5;
+            for (let i = 0; i < 8; i++) {
+                const angle = (Math.PI * 2 * i) / 8;
+                ctx.beginPath();
+                ctx.moveTo(Math.cos(angle) * 6, Math.sin(angle) * 6);
+                ctx.lineTo(Math.cos(angle) * 12, Math.sin(angle) * 12);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+            token.rotation = (token.rotation || 0) + 0.05;
+        }
+
+        function drawPowerUp(powerUp) {
+            const screenX = powerUp.x - state.camera;
+
+            ctx.save();
+            ctx.translate(screenX + 15, powerUp.y + 15);
+            ctx.rotate(powerUp.rotation || 0);
+
+            // Glow effect
+            ctx.shadowColor = '#ffeb3b';
+            ctx.shadowBlur = 15;
+
+            // Star shape
+            ctx.fillStyle = '#ffeb3b';
+            ctx.beginPath();
+            for (let i = 0; i < 5; i++) {
+                const angle = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+                const x = Math.cos(angle) * 15;
+                const y = Math.sin(angle) * 15;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+                
+                const innerAngle = angle + Math.PI / 5;
+                const innerX = Math.cos(innerAngle) * 7;
+                const innerY = Math.sin(innerAngle) * 7;
+                ctx.lineTo(innerX, innerY);
+            }
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+            powerUp.rotation = (powerUp.rotation || 0) + 0.05;
+        }
+
+        function drawFireball(fireball) {
+            const screenX = fireball.x - state.camera;
+
+            ctx.save();
+            
+            // Glow
+            ctx.shadowColor = '#ff6b00';
+            ctx.shadowBlur = 10;
+
+            // Fireball
+            ctx.fillStyle = '#ff6b00';
+            ctx.beginPath();
+            ctx.arc(screenX + 10, fireball.y + 10, 10, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Inner flame
+            ctx.fillStyle = '#ffeb3b';
+            ctx.beginPath();
+            ctx.arc(screenX + 10, fireball.y + 10, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function drawPlatform(platform) {
+            const screenX = platform.x - state.camera;
+
+            if (platform.height > 50) {
+                ctx.fillStyle = '#8b7355';
+                ctx.fillRect(screenX, platform.y, platform.width, platform.height);
+                ctx.fillStyle = '#7cb342';
+                ctx.fillRect(screenX, platform.y, platform.width, 10);
+                
+                // Grass details
+                ctx.fillStyle = '#689f38';
+                for (let i = 0; i < platform.width; i += 20) {
+                    ctx.fillRect(screenX + i, platform.y + 2, 3, 8);
+                }
+            } else {
+                ctx.fillStyle = '#8b7355';
+                ctx.fillRect(screenX, platform.y, platform.width, platform.height);
+                
+                ctx.strokeStyle = '#6d5a47';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(screenX, platform.y, platform.width, platform.height);
+            }
+        }
+
+        function drawEnemy(enemy) {
+            if (!enemy.alive) return;
+            
+            const screenX = enemy.x - state.camera;
+
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            ctx.beginPath();
+            ctx.ellipse(screenX + 20, enemy.y + 38, 18, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Body
+            ctx.fillStyle = '#d32f2f';
+            ctx.beginPath();
+            ctx.arc(screenX + 20, enemy.y + 20, 20, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Eyes
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(screenX + 12, enemy.y + 15, 6, 0, Math.PI * 2);
+            ctx.arc(screenX + 28, enemy.y + 15, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = 'black';
+            ctx.beginPath();
+            ctx.arc(screenX + 12 + (enemy.dir * 2), enemy.y + 15, 3, 0, Math.PI * 2);
+            ctx.arc(screenX + 28 + (enemy.dir * 2), enemy.y + 15, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Angry eyebrows
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(screenX + 8, enemy.y + 10);
+            ctx.lineTo(screenX + 16, enemy.y + 12);
+            ctx.moveTo(screenX + 24, enemy.y + 12);
+            ctx.lineTo(screenX + 32, enemy.y + 10);
+            ctx.stroke();
+
+            // Feet
+            ctx.fillStyle = '#c62828';
+            ctx.fillRect(screenX + 8, enemy.y + 35, 10, 5);
+            ctx.fillRect(screenX + 22, enemy.y + 35, 10, 5);
+        }
+
+        function drawClouds() {
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            const clouds = [
+                { x: 100, y: 80, size: 40 },
+                { x: 400, y: 120, size: 50 },
+                { x: 700, y: 60, size: 45 },
+                { x: 1000, y: 100, size: 40 },
+                { x: 1400, y: 90, size: 55 },
+                { x: 1800, y: 70, size: 45 },
+                { x: 2200, y: 110, size: 50 }
+            ];
+
+            clouds.forEach(cloud => {
+                const x = cloud.x - state.camera * 0.3;
+                ctx.beginPath();
+                ctx.arc(x, cloud.y, cloud.size * 0.4, 0, Math.PI * 2);
+                ctx.arc(x + cloud.size * 0.3, cloud.y - cloud.size * 0.1, cloud.size * 0.5, 0, Math.PI * 2);
+                ctx.arc(x + cloud.size * 0.6, cloud.y, cloud.size * 0.4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // Collision detection
+        function collides(a, b) {
+            return a.x < b.x + b.width &&
+                   a.x + a.width > b.x &&
+                   a.y < b.y + b.height &&
+                   a.y + a.height > b.y;
+        }
+
+        // Shoot fireball
+        function shootFireball() {
+            if (!state.powerUpActive) return;
+            
+            fireballs.push({
+                x: player.x + (player.direction === 1 ? player.width : -20),
+                y: player.y + 15,
+                width: 20,
+                height: 20,
+                vx: player.direction * 10
+            });
+        }
+
+        // Update player
+        function updatePlayer() {
+            // Movement
+            if (state.keys['ArrowLeft']) {
+                player.vx = -player.speed;
+                player.direction = -1;
+            } else if (state.keys['ArrowRight']) {
+                player.vx = player.speed;
+                player.direction = 1;
+            } else {
+                player.vx *= 0.8;
+            }
+
+            // Jump
+            if (state.keys[' '] && player.onGround) {
+                player.vy = -player.jumpPower;
+                player.onGround = false;
+            }
+
+            // Gravity
+            player.vy += GAME.GRAVITY;
+            if (player.vy > 20) player.vy = 20;
+
+            // Move
+            player.x += player.vx;
+            player.y += player.vy;
+
+            // Boundaries
+            if (player.x < 0) player.x = 0;
+            if (player.x > 2900) player.x = 2900;
+
+            // Platform collisions
+            player.onGround = false;
+            platforms.forEach(p => {
+                if (collides(player, p)) {
+                    if (player.vy > 0) {
+                        player.y = p.y - player.height;
+                        player.vy = 0;
+                        player.onGround = true;
+                    }
+                }
+            });
+
+            // Block collisions
+            questionBlocks.forEach(block => {
+                if (collides(player, block)) {
+                    if (player.vy < 0 && player.y < block.y + block.height) {
+                        // Hit from below
+                        if (block.active) {
+                            block.active = false;
+                            block.bounce = 10;
+                            
+                            if (block.type === 'token') {
+                                tokens.push({
+                                    x: block.x + 10,
+                                    y: block.y - 40,
+                                    width: 30,
+                                    height: 30,
+                                    vy: -10,
+                                    collected: false
+                                });
+                            } else if (block.type === 'power') {
+                                powerUps.push({
+                                    x: block.x + 10,
+                                    y: block.y - 40,
+                                    width: 30,
+                                    height: 30,
+                                    vy: -10,
+                                    collected: false
+                                });
+                            }
+                        }
+                        player.y = block.y + block.height;
+                        player.vy = 0;
+                    } else if (player.vy > 0) {
+                        player.y = block.y - player.height;
+                        player.vy = 0;
+                        player.onGround = true;
+                    }
+                }
+
+                if (block.bounce > 0) block.bounce--;
+            });
+
+            // Collect tokens
+            tokens.forEach(token => {
+                if (!token.collected && collides(player, token)) {
+                    token.collected = true;
+                    state.score++;
+                    document.getElementById('ui').textContent = `🪙 Tokens: ${state.score}`;
+                }
+                if (!token.collected) {
+                    token.vy += 0.4;
+                    token.y += token.vy;
+                    if (token.y > GAME.HEIGHT) token.collected = true;
+                }
+            });
+
+            // Collect power-ups
+            powerUps.forEach(powerUp => {
+                if (!powerUp.collected && collides(player, powerUp)) {
+                    powerUp.collected = true;
+                    state.powerUpActive = true;
+                    state.powerUpTimer = 600; // 10 seconds at 60fps
+                    document.getElementById('powerUp').style.display = 'block';
+                }
+                if (!powerUp.collected) {
+                    powerUp.vy += 0.4;
+                    powerUp.y += powerUp.vy;
+                    if (powerUp.y > GAME.HEIGHT) powerUp.collected = true;
+                }
+            });
+
+            // Power-up timer
+            if (state.powerUpActive) {
+                state.powerUpTimer--;
+                if (state.powerUpTimer <= 0) {
+                    state.powerUpActive = false;
+                    document.getElementById('powerUp').style.display = 'none';
+                }
+            }
+
+            // Invincibility timer
+            if (player.invincible) {
+                player.invincibleTimer--;
+                if (player.invincibleTimer <= 0) {
+                    player.invincible = false;
+                }
+            }
+
+            // Enemy collisions
+            enemies.forEach(enemy => {
+                if (!enemy.alive) return;
+                
+                if (collides(player, enemy)) {
+                    // Jump on enemy
+                    if (player.vy > 0 && player.y + player.height - 10 < enemy.y + enemy.height / 2) {
+                        enemy.alive = false;
+                        player.vy = -12;
+                        state.enemiesKilled++;
+                    } else if (!player.invincible) {
+                        // Take damage
+                        state.lives--;
+                        document.getElementById('lives').textContent = `❤️ Lives: ${state.lives}`;
+                        player.invincible = true;
+                        player.invincibleTimer = 120;
+                        
+                        // Knockback
+                        player.vx = (player.x < enemy.x ? -10 : 10);
+                        player.vy = -10;
+                        
+                        if (state.lives <= 0) {
+                            endGame();
+                        }
+                    }
+                }
+            });
+
+            // Fall off world
+            if (player.y > GAME.HEIGHT) {
+                state.lives--;
+                document.getElementById('lives').textContent = `❤️ Lives: ${state.lives}`;
+                if (state.lives <= 0) {
+                    endGame();
+                } else {
+                    player.x = 100;
+                    player.y = GAME.GROUND_Y - 50;
+                    player.vx = 0;
+                    player.vy = 0;
+                    player.invincible = true;
+                    player.invincibleTimer = 120;
+                }
+            }
+
+            // Camera follow
+            state.camera = player.x - GAME.WIDTH / 3;
+            if (state.camera < 0) state.camera = 0;
+            if (state.camera > 1800) state.camera = 1800;
+
+            // Check victory
+            const allTokensCollected = questionBlocks.filter(b => b.type === 'token').every(b => !b.active);
+            if (allTokensCollected && state.active) {
+                victory();
+            }
+        }
+
+        // Update enemies
+        function updateEnemies() {
+            enemies.forEach(enemy => {
+                if (!enemy.alive) return;
+                
+                enemy.x += enemy.vx * enemy.dir;
+                
+                if (enemy.x < 0 || enemy.x > 2900) {
+                    enemy.dir *= -1;
+                }
+                
+                if (Math.random() < 0.01) {
+                    enemy.dir *= -1;
+                }
+            });
+        }
+
+        // Update fireballs
+        function updateFireballs() {
+            fireballs.forEach((fireball, index) => {
+                fireball.x += fireball.vx;
+
+                // Check enemy collisions
+                enemies.forEach(enemy => {
+                    if (enemy.alive && collides(fireball, enemy)) {
+                        enemy.alive = false;
+                        fireballs.splice(index, 1);
+                        state.enemiesKilled++;
+                    }
+                });
+
+                // Remove off-screen fireballs
+                if (fireball.x < state.camera - 100 || fireball.x > state.camera + GAME.WIDTH + 100) {
+                    fireballs.splice(index, 1);
+                }
+            });
+        }
+
+        // Render
+        function render() {
+            const scaleX = canvas.width / GAME.WIDTH;
+            const scaleY = canvas.height / GAME.HEIGHT;
+
+            ctx.save();
+            ctx.scale(scaleX, scaleY);
+
+            // Sky gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, GAME.HEIGHT);
+            gradient.addColorStop(0, '#5c94fc');
+            gradient.addColorStop(0.7, '#89b5ff');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, GAME.WIDTH, GAME.HEIGHT * 0.7);
+
+            // Clouds
+            drawClouds();
+
+            // Ground
+            ctx.fillStyle = '#8b7355';
+            ctx.fillRect(0, GAME.HEIGHT * 0.7, GAME.WIDTH, GAME.HEIGHT * 0.3);
+
+            // Draw everything
+            platforms.forEach(drawPlatform);
+            questionBlocks.forEach(drawBlock);
+            tokens.filter(t => !t.collected).forEach(drawToken);
+            powerUps.filter(p => !p.collected).forEach(drawPowerUp);
+            fireballs.forEach(drawFireball);
+            enemies.forEach(drawEnemy);
+            drawPlayer();
+
+            ctx.restore();
+        }
+
+        // Game loop
+        function gameLoop() {
+            if (state.active) {
+                updatePlayer();
+                updateEnemies();
+                updateFireballs();
+                render();
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start game
+        function startGame() {
+            state.active = true;
+            state.score = 0;
+            state.lives = 3;
+            state.enemiesKilled = 0;
+            state.camera = 0;
+            state.powerUpActive = false;
+            state.powerUpTimer = 0;
+            
+            document.getElementById('ui').textContent = '🪙 Tokens: 0';
+            document.getElementById('lives').textContent = '❤️ Lives: 3';
+            document.getElementById('powerUp').style.display = 'none';
+            document.getElementById('startScreen').classList.remove('active');
+            document.getElementById('gameOverScreen').classList.remove('active');
+            document.getElementById('victoryScreen').classList.remove('active');
+            
+            player.reset();
+            questionBlocks.forEach(b => { b.active = true; b.bounce = 0; });
+            tokens = [];
+            powerUps = [];
+            fireballs = [];
+            enemies.forEach((e, i) => {
+                e.x = [600, 1000, 1400, 1900, 2400][i];
+                e.dir = 1;
+                e.alive = true;
+            });
+        }
+
+        // End game
+        function endGame() {
+            if (!state.active) return;
+            state.active = false;
+            document.getElementById('finalScore').textContent = `Tokens: ${state.score}`;
+            document.getElementById('enemiesKilled').textContent = `Enemies Defeated: ${state.enemiesKilled}`;
+            document.getElementById('gameOverScreen').classList.add('active');
+        }
+
+        // Victory
+        function victory() {
+            state.active = false;
+            document.getElementById('victoryScore').textContent = `Final Score: ${state.score} tokens | ${state.enemiesKilled} enemies defeated!`;
+            document.getElementById('victoryScreen').classList.add('active');
+        }
+
+        // Controls
+        let firePressed = false;
+        
+        window.addEventListener('keydown', e => {
+            state.keys[e.key] = true;
+            if (e.key === ' ') e.preventDefault();
+            
+            if ((e.key === 'x' || e.key === 'X') && !firePressed && state.powerUpActive) {
+                shootFireball();
+                firePressed = true;
+            }
+        });
+
+        window.addEventListener('keyup', e => {
+            state.keys[e.key] = false;
+            if (e.key === 'x' || e.key === 'X') {
+                firePressed = false;
+            }
+        });
+
+        // Touch controls
+        const controls = {
+            left: document.getElementById('leftBtn'),
+            right: document.getElementById('rightBtn'),
+            jump: document.getElementById('jumpBtn'),
+            fire: document.getElementById('fireBtn')
+        };
+
+        controls.left.addEventListener('touchstart', () => state.keys['ArrowLeft'] = true);
+        controls.left.addEventListener('touchend', () => state.keys['ArrowLeft'] = false);
+        controls.right.addEventListener('touchstart', () => state.keys['ArrowRight'] = true);
+        controls.right.addEventListener('touchend', () => state.keys['ArrowRight'] = false);
+        controls.jump.addEventListener('touchstart', () => state.keys[' '] = true);
+        controls.jump.addEventListener('touchend', () => state.keys[' '] = false);
+        controls.fire.addEventListener('touchstart', () => shootFireball());
+
+        controls.left.addEventListener('mousedown', () => state.keys['ArrowLeft'] = true);
+        controls.left.addEventListener('mouseup', () => state.keys['ArrowLeft'] = false);
+        controls.right.addEventListener('mousedown', () => state.keys['ArrowRight'] = true);
+        controls.right.addEventListener('mouseup', () => state.keys['ArrowRight'] = false);
+        controls.jump.addEventListener('mousedown', () => state.keys[' '] = true);
+        controls.jump.addEventListener('mouseup', () => state.keys[' '] = false);
+        controls.fire.addEventListener('mousedown', () => shootFireball());
+
+        // Button events
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('restartBtn').addEventListener('click', startGame);
+        document.getElementById('playAgainBtn').addEventListener('click', startGame);
+
+        // Start loop
+        gameLoop();
+    </script>
+</body>
+</html>
